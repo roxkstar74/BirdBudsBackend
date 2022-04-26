@@ -166,6 +166,7 @@ app.get('/sessions/callback', async function(req, res){
 });
 
 const afterSignUp = async (dataToStore, id, res) => {
+  delete dataToStore.client;
   await storeDataInMongo(dataToStore);
   await sendDMToUser(id, "You're all set! We'll start sending you DMs within 1 week :D");
   res.redirect(`https://twitter.com/messages/${id}-1516210896632266756`);
