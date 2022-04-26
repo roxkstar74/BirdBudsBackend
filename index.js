@@ -12,7 +12,7 @@ let bodyParser = require('body-parser')
 let cookieParser = require('cookie-parser')
 let session = require('express-session')
 let app = express();
-let { sendDMToUser } = require('./twitter.js')
+let { sendDMToUser, generateAuthURL, generateLoginData } = require('./twitter.js')
 const { MongoClient } = require("mongodb");
 dotenv.config();
 
@@ -25,7 +25,7 @@ const client = new MongoClient(uri);
 app.set('port', process.env.PORT || 80);
 app.use(bodyParser());
 app.use(cookieParser());
-app.use(session({  secret: process.env.EXPRESS_SESSION_SECRET }));
+app.use(session({  saveUninitialized: true, resave: true, secret: process.env.EXPRESS_SESSION_SECRET, state: 'spaghet', codeVerifier: 'spaghetti2' }));
 app.use(function(req, res, next){
     res.locals.user = req.session.user;
     next();
@@ -84,6 +84,55 @@ app.get('/sessions/connect', function(req, res){
   });
 });
 
+let codeVerifier;
+let state;
+
+app.get('/v2/login', function(req, res){
+  let authURLBlob = generateAuthURL();
+  codeVerifier = authURLBlob.codeVerifier;
+  state = authURLBlob.state;
+  console.log(authURLBlob.url);
+  res.session = {};
+  res.session.state = state;
+  res.session.codeVerifier = codeVerifier;
+  res.redirect(authURLBlob.url);
+});
+
+app.get('/v2/callback', async function(req, res) {
+  console.log('CALLBACK HIT', req.url);  // Extract state and code from query string
+  const { code } = req.query;
+  const newState = req.query.state;
+  // Get the saved codeVerifier from session
+  const { codeVerifier: newCodeVerifier, state: sessionState } = req.session;
+  console.log('newCodeVerifier', newCodeVerifier);
+  console.log('sessionState', sessionState);
+  console.log('codeVerifier', codeVerifier);
+  console.log('state', state);
+
+  if(state == newState) {
+    console.log('state matches');
+  }
+  else {
+    console.log('state does not match');
+  }
+
+  // if (!codeVerifier || !state || !sessionState || !code) {
+  //   return res.status(400).send('You denied the app or your session expired!');
+  // }
+  // if (state !== sessionState) {
+  //   return res.status(400).send('Stored tokens didnt match!');
+  // }
+
+  let dataToStore = await generateLoginData(code, codeVerifier);
+  console.log('gonna start storin data');
+  afterSignUp(dataToStore, dataToStore.id, res);
+});
+
+
+app.get('/v2/final', async function(req, res) {
+  console.log('final', req.query);
+  res.status(200).send();
+});
 
 app.get('/sessions/callback', async function(req, res){
   consumer().getOAuthAccessToken(
@@ -107,9 +156,6 @@ app.get('/sessions/callback', async function(req, res){
           console.log(data);
           req.session.twitterScreenName = data["screen_name"];  
           req.session.twitterLocaltion = data["location"];  
-          await storeDataInMongo(req.session);
-          await sendDMToUser(data.id, "You're all set! We'll start sending you DMs within 1 week :D");
-          res.redirect(`https://twitter.com/messages/${data.id}-1516210896632266756`);
         }  
       });  
 
@@ -118,5 +164,11 @@ app.get('/sessions/callback', async function(req, res){
     }
   });
 });
+
+const afterSignUp = async (dataToStore, id, res) => {
+  await storeDataInMongo(dataToStore);
+  await sendDMToUser(id, "You're all set! We'll start sending you DMs within 1 week :D");
+  res.redirect(`https://twitter.com/messages/${id}-1516210896632266756`);
+}
 
 app.listen(parseInt(process.env.PORT || 80));

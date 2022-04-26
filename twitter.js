@@ -13,6 +13,10 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 // Instanciate with desired auth type (here's Bearer v2 auth)
 const rateLimitPlugin = new TwitterApiRateLimitPlugin()
 const twitterClient = new TwitterApi({
+  clientId: process.env.BACKEND_CLIENT_ID
+}, {plugins: [rateLimitPlugin]});
+
+const dmClient = new TwitterApi({
   appKey: API_KEY,
   appSecret: API_KEY_SECRET,
   accessToken: ACCESS_TOKEN, // oauth token from previous step (link generation)
@@ -33,15 +37,45 @@ let getId = async () => {
 }
 
 const sendDMToUser = async (userId, message) => {
-    await getId();
     // let testUserId = await twitterClient.v2.userByUsername('roxkstar74').then(user => user.data.id);
-    await twitterClient.v1.sendDm({
+    await dmClient.v1.sendDm({
         event: EDirectMessageEventTypeV1.DirectMessageEvents,
         recipient_id: userId,
         text: message
     });
 }
 
+const generateAuthURL = () => {
+
+    let data = twitterClient.generateOAuth2AuthLink('http://localhost:6969/v2/callback', {
+        response_type: 'code',
+        scope: ['tweet.read', 'follows.read', 'offline.access', 'users.read'],
+        force_login: true,
+    })
+
+    console.log(data);
+
+    return data;
+}
+
+const generateLoginData = async (code, codeVerifier) => {
+    console.log(code);
+    let loginData = await twitterClient.loginWithOAuth2({
+        code: code,
+        redirect_uri: 'http://localhost:6969/v2/callback',
+        codeVerifier: codeVerifier
+    }).catch(err => {
+        console.log(err);
+        throw new Error('Failed to double oauth');
+    });
+    // get id
+    let id = await loginData.client.v2.me().then(user => user.data.id);
+    return {...loginData, id};
+}
+
+
 module.exports = {
-    sendDMToUser
+    sendDMToUser,
+    generateAuthURL,
+    generateLoginData,
 };
