@@ -4,15 +4,18 @@
   "description": "just the oauth for birdbuds",
   "main": "index.js",
   "dependencies": {
+    "@twitter-api-v2/plugin-rate-limit": "^1.1.0",
     "body-parser": "^1.20.0",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
     "express-session": "^1.17.2",
+    "mongodb": "^4.5.0",
     "oauth": "^0.9.15",
     "path": "^0.12.7",
     "stylus": "^0.57.0",
     "sys": "^0.0.1",
+    "twitter-api-v2": "^1.12.0",
     "util": "^0.12.4"
   },
   "devDependencies": {},
