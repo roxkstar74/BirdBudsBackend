@@ -86,6 +86,9 @@ app.get('/sessions/connect', function(req, res){
 
 let codeVerifier;
 let state;
+app.get('/v2', function(req, res){
+  res.status(200).send('BirdBuds v2 is up!');
+});
 
 app.get('/v2/login', function(req, res){
   let authURLBlob = generateAuthURL();
