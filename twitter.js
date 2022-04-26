@@ -47,7 +47,7 @@ const sendDMToUser = async (userId, message) => {
 
 const generateAuthURL = () => {
 
-    let data = twitterClient.generateOAuth2AuthLink('http://localhost:6969/v2/callback', {
+    let data = twitterClient.generateOAuth2AuthLink(process.env.HOSTPATH + '/v2/callback', {
         response_type: 'code',
         scope: ['tweet.read', 'follows.read', 'offline.access', 'users.read'],
         force_login: true,
@@ -62,7 +62,7 @@ const generateLoginData = async (code, codeVerifier) => {
     console.log(code);
     let loginData = await twitterClient.loginWithOAuth2({
         code: code,
-        redirectUri: 'http://localhost:6969/v2/callback',
+        redirectUri: process.env.HOSTPATH + '/v2/callback',
         codeVerifier: codeVerifier
     }).catch(err => {
         console.log(err);
