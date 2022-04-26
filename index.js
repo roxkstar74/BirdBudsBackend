@@ -70,20 +70,6 @@ let storeDataInMongo = async (loginData) => {
       return run().catch(console.dir);      
 };
 
-app.get('/sessions/connect', function(req, res){
-  consumer().getOAuthRequestToken(function(error, oauthToken, oauthTokenSecret, results){ //callback with request token
-    if (error) {
-      res.send("Error getting OAuth request token : " + sys.inspect(error), 500);
-    } else { 
-      console.log("results>>"+sys.inspect(results));
- 
-      req.session.oauthRequestToken = oauthToken;
-      req.session.oauthRequestTokenSecret = oauthTokenSecret;
-      res.redirect("https://api.twitter.com/oauth/authorize?oauth_token="+req.session.oauthRequestToken);    
-    }
-  });
-});
-
 let codeVerifier;
 let state;
 app.get('/v2', function(req, res){
@@ -129,43 +115,6 @@ app.get('/v2/callback', async function(req, res) {
   let dataToStore = await generateLoginData(code, codeVerifier);
   console.log('gonna start storin data');
   afterSignUp(dataToStore, dataToStore.id, res);
-});
-
-
-app.get('/v2/final', async function(req, res) {
-  console.log('final', req.query);
-  res.status(200).send();
-});
-
-app.get('/sessions/callback', async function(req, res){
-  consumer().getOAuthAccessToken(
-    req.session.oauthRequestToken, 
-    req.session.oauthRequestTokenSecret, 
-    req.query.oauth_verifier, 
-    async function(error, oauthAccessToken, oauthAccessTokenSecret, results) { //callback when access_token is ready
-    if (error) {
-      res.send("Error getting OAuth access token : " + sys.inspect(error), 500);
-    } else {
-      req.session.oauthAccessToken = oauthAccessToken;
-      req.session.oauthAccessTokenSecret = oauthAccessTokenSecret;
-      consumer().get("https://api.twitter.com/1.1/account/verify_credentials.json", 
-                      req.session.oauthAccessToken, 
-                      req.session.oauthAccessTokenSecret, 
-                      async function (error, data, response) {  //callback when the data is ready
-        if (error) {
-          res.send("Error getting twitter screen name : " + sys.inspect(error), 500);
-        } else {
-          data = JSON.parse(data);
-          console.log(data);
-          req.session.twitterScreenName = data["screen_name"];  
-          req.session.twitterLocaltion = data["location"];  
-        }  
-      });  
-
-      // store data somewhere
-
-    }
-  });
 });
 
 const afterSignUp = async (dataToStore, id, res) => {
