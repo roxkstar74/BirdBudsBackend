@@ -62,7 +62,7 @@ const generateLoginData = async (code, codeVerifier) => {
     console.log(code);
     let loginData = await twitterClient.loginWithOAuth2({
         code: code,
-        redirect_uri: 'http://localhost:6969/v2/callback',
+        redirectUri: 'http://localhost:6969/v2/callback',
         codeVerifier: codeVerifier
     }).catch(err => {
         console.log(err);
