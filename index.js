@@ -68,7 +68,10 @@ let storeDataInMongo = async (loginData) => {
           const database = client.db('birdbuds');
           const logins = database.collection('logins');
           // Query for a movie that has the title 'Back to the Future
-          await logins.insertOne(loginData);
+          const query = { id: loginData.id };
+          const update = { $set: loginData};
+          const options = { upsert: true };
+          await logins.updateOne(query, update, options);
           console.log('Login stored!');
         } finally {
           // Ensures that the client will close when you finish/error
