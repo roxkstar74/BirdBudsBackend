@@ -87,10 +87,12 @@ app.get('/v2', function(req, res){
 
 app.get('/v2/login', function(req, res){
   let authURLBlob = generateAuthURL();
+  let id = req.query.id;
   console.log(authURLBlob.url);
   console.log('session:', req.session);
   req.session.state = authURLBlob.state;
   req.session.codeVerifier = authURLBlob.codeVerifier;
+  res.session.userID = id;
   console.log('session updated:', req.session);
   res.redirect(authURLBlob.url);
 });
