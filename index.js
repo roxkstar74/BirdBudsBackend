@@ -12,6 +12,8 @@ let bodyParser = require('body-parser')
 let cookieParser = require('cookie-parser')
 let session = require('express-session')
 let app = express();
+let MongoDBStore = require('connect-mongodb-session')(session);
+
 let { sendDMToUser, generateAuthURL, generateLoginData } = require('./twitter.js')
 const { MongoClient } = require("mongodb");
 dotenv.config();
@@ -20,16 +22,22 @@ dotenv.config();
 const uri =
   `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PW}@${process.env.MONGO_URL}?retryWrites=true&writeConcern=majority`;
 const client = new MongoClient(uri);
+let store = new MongoDBStore({
+  uri: uri,
+  collection: 'mySessions'
+});
+
 
 // all environments
 app.set('port', process.env.PORT || 80);
 app.use(bodyParser());
 app.use(cookieParser());
-app.use(session({  saveUninitialized: true, resave: true, secret: process.env.EXPRESS_SESSION_SECRET, state: 'spaghet', codeVerifier: 'spaghetti2' }));
-app.use(function(req, res, next){
-    res.locals.user = req.session.user;
-    next();
-});
+app.use(session({  
+  saveUninitialized: true, 
+  resave: true, 
+  secret: process.env.EXPRESS_SESSION_SECRET, 
+  store: store
+}));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(require('stylus').middleware(__dirname + '/public'));
 
@@ -81,9 +89,9 @@ app.get('/v2/login', function(req, res){
   codeVerifier = authURLBlob.codeVerifier;
   state = authURLBlob.state;
   console.log(authURLBlob.url);
-  res.session = {};
-  res.session.state = state;
-  res.session.codeVerifier = codeVerifier;
+  console.log('session:', req.session);
+  req.session.state = state;
+  req.session.codeVerifier = codeVerifier;
   res.redirect(authURLBlob.url);
 });
 
@@ -95,8 +103,6 @@ app.get('/v2/callback', async function(req, res) {
   const { codeVerifier: newCodeVerifier, state: sessionState } = req.session;
   console.log('newCodeVerifier', newCodeVerifier);
   console.log('sessionState', sessionState);
-  console.log('codeVerifier', codeVerifier);
-  console.log('state', state);
 
   if(state == newState) {
     console.log('state matches');
@@ -112,7 +118,7 @@ app.get('/v2/callback', async function(req, res) {
   //   return res.status(400).send('Stored tokens didnt match!');
   // }
 
-  let dataToStore = await generateLoginData(code, codeVerifier);
+let dataToStore = await generateLoginData(code, newCodeVerifier);
   console.log('gonna start storin data');
   afterSignUp(dataToStore, dataToStore.id, res);
 });
