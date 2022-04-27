@@ -81,20 +81,17 @@ let storeDataInMongo = async (loginData) => {
       return run().catch(console.dir);      
 };
 
-let codeVerifier;
-let state;
 app.get('/v2', function(req, res){
   res.status(200).send('BirdBuds v2 is up!');
 });
 
 app.get('/v2/login', function(req, res){
   let authURLBlob = generateAuthURL();
-  codeVerifier = authURLBlob.codeVerifier;
-  state = authURLBlob.state;
   console.log(authURLBlob.url);
   console.log('session:', req.session);
-  req.session.state = state;
-  req.session.codeVerifier = codeVerifier;
+  req.session.state = authURLBlob.state;
+  req.session.codeVerifier = authURLBlob.codeVerifier;
+  console.log('session updated:', req.session);
   res.redirect(authURLBlob.url);
 });
 
@@ -107,21 +104,14 @@ app.get('/v2/callback', async function(req, res) {
   console.log('newCodeVerifier', newCodeVerifier);
   console.log('sessionState', sessionState);
 
-  if(state == newState) {
-    console.log('state matches');
+  if (!newCodeVerifier || !sessionState) {
+    return res.status(400).send('You denied the app or your session expired! Please ');
   }
-  else {
-    console.log('state does not match');
+  if (state !== sessionState) {
+    return res.status(400).send('Stored tokens didnt match! Please unfollow birdbuds, wait 1 minute, and follow again to get a new link.');
   }
 
-  // if (!codeVerifier || !state || !sessionState || !code) {
-  //   return res.status(400).send('You denied the app or your session expired!');
-  // }
-  // if (state !== sessionState) {
-  //   return res.status(400).send('Stored tokens didnt match!');
-  // }
-
-let dataToStore = await generateLoginData(code, newCodeVerifier);
+  let dataToStore = await generateLoginData(code, newCodeVerifier);
   console.log('gonna start storin data');
   afterSignUp(dataToStore, dataToStore.id, res);
 });
