@@ -83,16 +83,12 @@ let storeDataInMongo = async (loginData) => {
       return run().catch(console.dir);      
 };
 
-let codeVerifier;
-let state;
 app.get('/v2', function(req, res){
   res.status(200).send('BirdBuds v2 is up!');
 });
 
 app.get('/v2/login', function(req, res){
   let authURLBlob = generateAuthURL();
-  codeVerifier = authURLBlob.codeVerifier;
-  state = authURLBlob.state;
   console.log(authURLBlob.url);
   console.log('session:', req.session);
   req.session.state = state;
@@ -110,10 +106,6 @@ app.get('/v2/callback', async function(req, res) {
   console.log('sessionState', sessionState);
   if (!newCodeVerifier || !sessionState) {
     res.status(400).send('You denied the app or your session expired! Please ');
-    return;
-  }
-  if (state !== sessionState) {
-    res.status(400).send('Stored tokens didnt match! Please unfollow birdbuds, wait 1 minute, and follow again to get a new link.');
     return;
   }
   if(error) {
