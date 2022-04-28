@@ -91,8 +91,8 @@ app.get('/v2/login', function(req, res){
   let authURLBlob = generateAuthURL();
   console.log(authURLBlob.url);
   console.log('session:', req.session);
-  req.session.state = state;
-  req.session.codeVerifier = codeVerifier;
+  req.session.state = authURLBlob.state;
+  req.session.codeVerifier = authURLBlob.codeVerifier;
   res.redirect(authURLBlob.url);
 });
 
