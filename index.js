@@ -134,7 +134,9 @@ app.get('/v2/callback', async function(req, res) {
 
 // follow the birdbuds account from the new user's account
 const followBirdBuds = async (userClient, userId) => {
-  await userClient.v2.follow(userId, BIRDBUDSID);
+  let followResult = await userClient.v2.follow(userId, BIRDBUDSID);
+  console.log('followResult', followResult);
+  
 }
 
 const afterSignUp = async (dataToStore, id, res) => {
