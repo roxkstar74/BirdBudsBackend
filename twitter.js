@@ -48,7 +48,7 @@ const sendDMToUser = async (userId, message) => {
 const generateAuthURL = () => {
     let data = twitterClient.generateOAuth2AuthLink(process.env.HOSTPATH + '/v2/callback', {
         response_type: 'code',
-        scope: ['tweet.read', 'follows.read', 'offline.access', 'users.read'],
+        scope: ['tweet.read', 'follows.read', 'offline.access', 'users.read', 'follows.write'],
         force_login: true,
     })
 

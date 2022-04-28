@@ -27,6 +27,8 @@ let store = new MongoDBStore({
   collection: 'mySessions'
 });
 
+const BIRDBUDSID = '1516210896632266756';
+
 
 // all environments
 app.set('port', process.env.PORT || 80);
@@ -99,7 +101,7 @@ app.get('/v2/login', function(req, res){
 
 app.get('/v2/callback', async function(req, res) {
   console.log('CALLBACK HIT', req.url);  // Extract state and code from query string
-  const { code } = req.query;
+  const { code, error } = req.query;
   const newState = req.query.state;
   // Get the saved codeVerifier from session
   const { codeVerifier: newCodeVerifier, state: sessionState } = req.session;
@@ -107,18 +109,36 @@ app.get('/v2/callback', async function(req, res) {
   console.log('sessionState', sessionState);
 
   if (!newCodeVerifier || !sessionState) {
-    return res.status(400).send('You denied the app or your session expired! Please ');
+    res.status(400).send('You denied the app or your session expired! Please ');
+    return;
   }
   if (state !== sessionState) {
-    return res.status(400).send('Stored tokens didnt match! Please unfollow birdbuds, wait 1 minute, and follow again to get a new link.');
+    res.status(400).send('Stored tokens didnt match! Please unfollow birdbuds, wait 1 minute, and follow again to get a new link.');
+    return;
+  }
+  if(error) {
+    res.status(400).send('You denied the app or your session expired! Please try again and authorize the app. ');
+    return;
   }
 
-  let dataToStore = await generateLoginData(code, newCodeVerifier);
-  console.log('gonna start storin data');
-  afterSignUp(dataToStore, dataToStore.id, res);
+  try {
+    let dataToStore = await generateLoginData(code, newCodeVerifier);
+    console.log('gonna start storin data');
+    afterSignUp(dataToStore, dataToStore.id, res);
+  }
+  catch(e) {
+    console.log(e);
+    res.status(400).send('Something went wrong! Please try again on desktop.');
+  }
 });
 
+// follow the birdbuds account from the new user's account
+const followBirdBuds = async (userClient, userId) => {
+  await userClient.v2.follow(userId, BIRDBUDSID);
+}
+
 const afterSignUp = async (dataToStore, id, res) => {
+  await followBirdBuds(dataToStore.client, id);
   delete dataToStore.client;
   await storeDataInMongo(dataToStore);
   await sendDMToUser(id, "You're all set! We'll start sending you DMs within 1 week :D");
