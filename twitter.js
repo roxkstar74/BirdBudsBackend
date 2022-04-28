@@ -9,6 +9,7 @@ const API_KEY_SECRET = process.env.API_KEY_SECRET;
 const BEARER_TOKEN = process.env.BEARER_TOKEN;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const BIRDBUDSID = '1516210896632266756';
 
 // Instanciate with desired auth type (here's Bearer v2 auth)
 const rateLimitPlugin = new TwitterApiRateLimitPlugin()
@@ -73,9 +74,13 @@ const generateLoginData = async (code, codeVerifier) => {
     return {...loginData, id};
 }
 
+const birdBudsFollowsUser = async (userId) => {
+    await dmClient.v2.follow(BIRDBUDSID, userId);
+};
 
 module.exports = {
     sendDMToUser,
     generateAuthURL,
     generateLoginData,
+    birdBudsFollowsUser
 };

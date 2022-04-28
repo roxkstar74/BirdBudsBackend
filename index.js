@@ -14,7 +14,7 @@ let session = require('express-session')
 let app = express();
 let MongoDBStore = require('connect-mongodb-session')(session);
 
-let { sendDMToUser, generateAuthURL, generateLoginData } = require('./twitter.js')
+let { sendDMToUser, generateAuthURL, generateLoginData, birdBudsFollowsUser } = require('./twitter.js')
 const { MongoClient } = require("mongodb");
 dotenv.config();
 
@@ -28,7 +28,6 @@ let store = new MongoDBStore({
 });
 
 const BIRDBUDSID = '1516210896632266756';
-
 
 // all environments
 app.set('port', process.env.PORT || 80);
@@ -129,8 +128,10 @@ const followBirdBuds = async (userClient, userId) => {
   await userClient.v2.follow(userId, BIRDBUDSID);
 }
 
+
 const afterSignUp = async (dataToStore, id, res) => {
   await followBirdBuds(dataToStore.client, id);
+  await birdBudsFollowsUser(id);
   delete dataToStore.client;
   await storeDataInMongo(dataToStore);
   await sendDMToUser(id, "You're all set! We'll start sending you DMs within 1 week :D");
