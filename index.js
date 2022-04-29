@@ -87,7 +87,8 @@ app.get('/v2', function(req, res){
 });
 
 app.get('/v2/login', function(req, res){
-  let authURLBlob = generateAuthURL();
+  let doFollow = req.query.forceFollow;
+  let authURLBlob = generateAuthURL(doFollow);
   console.log(authURLBlob.url);
   console.log('session:', req.session);
   req.session.state = authURLBlob.state;

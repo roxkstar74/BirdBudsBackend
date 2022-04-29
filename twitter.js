@@ -46,11 +46,15 @@ const sendDMToUser = async (userId, message) => {
     });
 }
 
-const generateAuthURL = () => {
+const generateAuthURL = (doFollow) => {
+    let scopes = ['tweet.read', 'follows.read', 'offline.access', 'users.read'];
+    if(doFollow) {
+        scopes.push('follows.write');
+    }
 
     let data = twitterClient.generateOAuth2AuthLink(process.env.HOSTPATH + '/v2/callback', {
         response_type: 'code',
-        scope: ['tweet.read', 'follows.read', 'offline.access', 'users.read', 'follows.write'],
+        scope: scopes,
         force_login: true,
     })
 
