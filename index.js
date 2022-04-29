@@ -93,6 +93,7 @@ app.get('/v2/login', function(req, res){
   console.log('session:', req.session);
   req.session.state = authURLBlob.state;
   req.session.codeVerifier = authURLBlob.codeVerifier;
+  req.session.doFollow = doFollow;
   res.redirect(authURLBlob.url);
 });
 
@@ -100,6 +101,7 @@ app.get('/v2/callback', async function(req, res) {
   console.log('CALLBACK HIT', req.url);  // Extract state and code from query string
   const { code, error } = req.query;
   const newState = req.query.state;
+  const doFollow = req.session.doFollow;
   // Get the saved codeVerifier from session
   const { codeVerifier: newCodeVerifier, state: sessionState } = req.session;
   console.log('newCodeVerifier', newCodeVerifier);
@@ -116,7 +118,7 @@ app.get('/v2/callback', async function(req, res) {
   try {
     let dataToStore = await generateLoginData(code, newCodeVerifier);
     console.log('gonna start storin data');
-    afterSignUp(dataToStore, dataToStore.id, res);
+    afterSignUp(dataToStore, dataToStore.id, doFollow, res);
   }
   catch(e) {
     console.log(e);
@@ -130,8 +132,10 @@ const followBirdBuds = async (userClient, userId) => {
 }
 
 
-const afterSignUp = async (dataToStore, id, res) => {
-  await followBirdBuds(dataToStore.client, id);
+const afterSignUp = async (dataToStore, id, doFollow, res) => {
+  if(doFollow) {
+    await followBirdBuds(dataToStore.client, id);
+  }
   await birdBudsFollowsUser(id);
   delete dataToStore.client;
   await storeDataInMongo(dataToStore);
