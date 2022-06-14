@@ -107,7 +107,7 @@ app.get('/v2/callback', async function(req, res) {
   console.log('newCodeVerifier', newCodeVerifier);
   console.log('sessionState', sessionState);
   if (!newCodeVerifier || !sessionState) {
-    res.status(400).send('You denied the app or your session expired! Please ');
+    res.status(400).send('You denied the app or your session expired! Please try again and authorize the app.');
     return;
   }
   if(error) {
